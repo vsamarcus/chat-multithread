@@ -27,7 +27,11 @@ while running:
     for sock in rs:
         if sock == server:
             message = sock.recv(2048).decode("utf-8")
-            print(message)
+            if message == "@SAIR":  # Verifica se o servidor enviou o comando de logout
+                print("Você será desconectada.")
+                running = False  # Encerra o loop e sai do cliente
+            else:
+                print(message)
         else:
             message = sys.stdin.readline().strip()
             if message:

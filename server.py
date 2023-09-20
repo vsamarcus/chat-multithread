@@ -20,9 +20,17 @@ def chat_client(conn, addr):
         while client_connected:
             message = conn.recv(2048).decode("utf-8")
             if message:
-                for client_conn, client_name in client_usernames.items():
-                    if client_conn != conn:
-                        client_conn.send(f"{username}:: {message}".encode("utf-8"))
+                if message == "@SAIR":  # Verifica se o cliente enviou o comando de logout
+                    conn.send("@LOGOUT".encode("utf-8"))  # Envia um comando de logout de volta ao cliente
+                    del client_usernames[conn]
+                    conn.close()
+                    client_connected = False
+                else:
+                    formatted_message = f"{username}:: {message}"
+                    print(formatted_message)
+                    for client_conn in client_usernames.keys():
+                        if client_conn != conn:
+                            client_conn.send(formatted_message.encode("utf-8"))
             else:
                 client_connected = False
     except Exception as ex:
