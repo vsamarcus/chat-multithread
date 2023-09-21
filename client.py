@@ -1,6 +1,7 @@
 import socket
 import select
 import sys
+import threading
 
 if len(sys.argv) < 2:
     print("usage: client SERVER_IP [PORT]")
@@ -15,9 +16,19 @@ server.connect((ip_address, port))
 username = input("Informe seu nome de usuário: ")
 server.send(username.encode("utf-8"))
 
+def user_input_thread(server_socket):
+    while True:
+        message = input()
+        server_socket.send(message.encode("utf-8"))
+
+# Inicie a thread de entrada do usuário
+user_input_thread = threading.Thread(target=user_input_thread, args=(server,))
+user_input_thread.daemon = True
+user_input_thread.start()
+
 running = True
 while running:
-    socket_list = [sys.stdin, server]
+    socket_list = [server]
     
     rs, ws, es = select.select(socket_list, [], [])
     if es:
@@ -27,14 +38,10 @@ while running:
     for sock in rs:
         if sock == server:
             message = sock.recv(2048).decode("utf-8")
-            if message == "@SAIR":  # Verifica se o servidor enviou o comando de logout
-                print("Você será desconectada.")
-                running = False  # Encerra o loop e sai do cliente
+            if message == "@SAIR":
+                print("Você será desconectado.")
+                running = False
             else:
                 print(message)
-        else:
-            message = sys.stdin.readline().strip()
-            if message:
-                server.send(f"{message}".encode("utf-8"))
 
 server.close()
